@@ -1,6 +1,6 @@
 SistemasOperativos
 ===
-Practicas de S.O en C realizadas durante el curso academico 2016/2017.
+Practicas de S.O en C y BASH realizadas durante el curso academico 2016/2017.
 
 Universidad Miguel Hernandez Elche.
 # Autor
