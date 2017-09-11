@@ -1,0 +1,162 @@
+#!/bin/bash
+#-----------------------------
+# Definición de Constantes
+#-----------------------------
+ 
+## En esta sección definiremos constantes que vamos a usar en el código, como por ejemplo
+## el número máximo de jugadores, o el número máximo de sorteos, así como cualquier código de
+## error que vayamos a utilizar.
+ 
+#Constantes
+
+declare -r MAX_SORTEOS=15
+declare -r MAX_JUGADORES=10
+ 
+menu="?"
+ 
+#Códigos de retorno
+RET_OK=0
+ 
+#parametro $1 es el numero de los sorteos max:15
+#parametro $2 es el numero de jugadores max:10
+
+ 
+#-------------------------------
+# Funciones
+#-------------------------------
+ 
+## En esta sección definiremos todas las funciones que vamos a utilizar en la sección prinpipal
+## Definir las necesarias. Algunas funciones que podéis definir serían las siguientes.
+ 
+
+## Mostrara un mensaje con ayuda de como se ejecuta el programa
+Sintaxis(){
+#-----------------------------------
+#Esta función se encarga de mostrar la ayuda de cómo utilizar el script y termina su ejecución
+#Recibe como parametro el código de terminación
+echo ""
+echo "Uso correcto del programa:"
+echo "Escriba: loteria [n][m]"
+echo "donde n -> numero de sorteo , comprendido entre [1, $MAX_SORTEOS]"
+echo "donde m -> numero de jugadores por sorteo , comprendido entre [1, $MAX_JUGADORES]"
+echo "" 
+exit $1
+}
+ 
+
+LimpiarFicheros(){
+
+# Esta función elimina los ficheros de ejecuciones anteriores con dev/null
+# comprobamos si existe  el fichero, si no existe se tragara el error.
+ 
+rm S[0-9]R 2> /dev/null
+rm S1[0-5]R 2> /dev/null
+
+}
+
+#Llamada a sorteo dependiendo del numero de sorteos indicado por el usuario.
+
+LlamarSorteo()
+{
+if [ -f sorteo ];then
+		for((i=1;i<=$1;i++))
+		do
+			./sorteo $i $2
+		done
+else
+echo No se encuentra el fichero sorteo
+fi
+}
+
+#Validar los argumentos. 
+
+ValidarArgumentos()
+{
+if [ "$1" = "$menu" ]; then
+#Llama a la funcion Sintaxis que mostrara como se usa el programa.
+	Sintaxis 
+ fi
+
+if [ $# -ne 2 ]; then
+
+		echo El numero de parametros es incorrecto, escriba el comando loteria ?
+		echo para obtener mas informacion.
+		exit -1
+		
+	fi   
+	 
+    if [ $1 -gt $MAX_SORTEOS ] || [ $2 -gt $MAX_JUGADORES ]; then
+		echo El parametro 1 no puede ser mayor que 15 o el parametro 2 no puede ser mayor que 10
+		exit	
+	fi
+	
+#Para controlar parametros negativos
+	if [ $1 -lt 0 ] || [ $2 -lt 0 ]; then
+		echo Los parametros deben de ser positvos
+		exit
+	fi
+}
+
+MostrarResultados()
+{
+# Esta función se encarga de mostrar los resultados en el informe final.
+
+echo "Informe de resultados"
+echo "Numero de sorteos: "$1 "Numero de jugadores: "$2
+
+# Bucle que recorre para todos los jugadores e imprime su premio total.
+for i in `seq $2`
+do
+{
+echo "jugador "$i": Total premio  " ${total[$i]} " Euros";
+}
+done
+}
+
+#CODIGO PRINCIPAL
+
+ValidarArgumentos $*
+
+# Si pasamos el control de argumentos asignamos los argumentos introducidos a las variables
+
+numSorteos=$1
+numJugadores=$2
+
+# Limpiamos de ejecuciones anteriores
+
+LimpiarFicheros
+
+#llamada a sorteo
+
+LlamarSorteo $1 $2
+
+# Inicializamos el array de premios
+
+ typeset premios[$1] # vector donde vamos almacenar la suma de premio de cada jugador
+  typeset total[$2] # vector que contendra suma total de los resultados de cada jugador
+	
+for jugador in `seq $2`; # bucle que pondra a 0 el vector que almacenara los resultados finales de la suma total
+do
+	total[jugador]=0
+done
+
+ for i in `seq $1` # contador de los sorteos	
+    do 
+	j=1	 # contador de los jugadores
+		while read premios[$j]
+			do
+			comentario=$(echo ${premios[j]} | grep [#] | wc -l)			
+			if [ $comentario -eq 1 ]; then	
+			:
+			 else
+				#echo ${suma_premio[$j]} # las llaves son para utilizar dos $ al mismo tiempo muestra el resultado del jugador 
+				let total[$j]=${total[$j]}+${premios[$j]}
+				let j++			
+			fi	
+			done < S"$i"R   
+			done
+
+# Por ultimo mostramos los resultados obtenidos
+MostrarResultados $1 $2
+
+exit 0
